@@ -1,74 +1,54 @@
 import serial
 import time
 import math
+import socket
 from pymavlink import mavutil
+from pymavlink.dialects.v20 import ardupilotmega as mavlink
 
-# -------------------------
-# CONFIG
-# -------------------------
 SERIAL_PORT = "COM5"
 BAUD = 115200
 
-# -------------------------
-# CONNECT STM32 SERIAL
-# -------------------------
 ser = serial.Serial(SERIAL_PORT, BAUD, timeout=1)
 
-# -------------------------
-# MAVLINK CONNECTION (to QGC)
-# -------------------------
-master = mavutil.mavlink_connection('udpout:127.0.0.1:14550')
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-print("MAVLink bridge started on", SERIAL_PORT)
+mav = mavlink.MAVLink(None)
+mav.srcSystem = 1
+mav.srcComponent = 1
 
-# -------------------------
-# TIME BASE (IMPORTANT FIX)
-# -------------------------
-start_time = time.monotonic()
+print("Bridge running...")
 
-# -------------------------
-# MAIN LOOP
-# -------------------------
+last_heartbeat = 0
+
 while True:
+    now = time.time()
+    if now - last_heartbeat >= 1.0:
+        hb = mav.heartbeat_encode(
+            mavlink.MAV_TYPE_FIXED_WING,
+            mavlink.MAV_AUTOPILOT_GENERIC,
+            mavlink.MAV_MODE_FLAG_AUTO_ENABLED,
+            0,
+            mavlink.MAV_STATE_ACTIVE
+        )
+        sock.sendto(hb.pack(mav), ('127.0.0.1', 14550))
+        last_heartbeat = now
+
     line = ser.readline().decode(errors='ignore').strip()
-
-    if not line:
-        continue
-
-    # Only process valid IMU lines
     if "ROLL=" not in line:
         continue
 
     try:
-        # Example expected format:
-        # ROLL=0.52 PITCH=-0.19 YAW=73.16
-
         parts = line.split()
+        roll  = math.radians(float(parts[0].split('=')[1]))
+        pitch = math.radians(float(parts[1].split('=')[1]))
+        yaw   = math.radians(float(parts[2].split('=')[1]))
 
-        roll = float(parts[0].split('=')[1])
-        pitch = float(parts[1].split('=')[1])
-        yaw = float(parts[2].split('=')[1])
+        t = int(time.time_ns() // 1000) & 0xFFFFFFFF
 
-        # Convert degrees → radians
-        roll = math.radians(roll)
-        pitch = math.radians(pitch)
-        yaw = math.radians(yaw)
-
-        # MAVLink-safe timestamp (FIXED)
-        t = int((time.monotonic() - start_time) * 1000) & 0xFFFFFFFF
-
-        # Send MAVLink attitude packet
-        master.mav.attitude_send(
-            t,      # time_boot_ms
-            roll,
-            pitch,
-            yaw,
-            0.0,    # rollspeed
-            0.0,    # pitchspeed
-            0.0     # yawspeed
-        )
-
-        print(f"Sent: {roll:.3f} {pitch:.3f} {yaw:.3f}")
+        att = mav.attitude_encode(t, roll, pitch, yaw, 0, 0, 0)
+        sock.sendto(att.pack(mav), ('127.0.0.1', 14550))
+        print("Sent:", round(math.degrees(roll),1), round(math.degrees(pitch),1), round(math.degrees(yaw),1))
 
     except Exception as e:
-        print("Parse error:", e, "Line:", line)
+        print("Error:", e, "Line:", line)
