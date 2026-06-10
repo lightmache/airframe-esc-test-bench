@@ -1,120 +1,101 @@
-# Hybrid Propulsion & Thermal Coupling Testbed  
-### 3D-Printed T-38 Trainer Airframe (Experimental Platform)
+## UAS Systems Integration & Telemetry Extension
 
-## Overview
+This project extends a brushless propulsion and instrumentation testbench into a lightweight UAS-style systems integration environment.
 
-This project is an experimental test platform investigating electrical propulsion behavior and thermal coupling effects in a small-scale brushless motor system mounted on a 3D-printed T-38 trainer-inspired airframe.
-
-The system is designed as a staged engineering testbed to evaluate propulsion power sources, instrumentation methods, and potential future integration of a PEM hydrogen fuel cell as an auxiliary energy subsystem.
-
-This is a bench-level experimental system for data collection and analysis, not a flight-certified vehicle.
+The goal is to bridge embedded hardware (STM32 + Arduino-based ESC control) with a Python-based telemetry and control layer, forming a unified data acquisition and ground-station-compatible interface.
 
 ---
 
-## Research Objective
+### Implemented Capabilities
 
-The primary objective is to evaluate:
-
-- Brushless motor + ESC behavior under controlled throttle profiles  
-- Electrical and thermal characteristics of small UAV-scale propulsion systems  
-- Feasibility of integrating a PEM hydrogen fuel cell as an auxiliary DC power source  
-- Potential waste-heat coupling between propulsion system and fuel cell subsystem (future phase)
-
----
-
-## System Architecture (Current Phase)
-
-### Propulsion Subsystem (Active)
-- Brushless DC motor
-- Electronic Speed Controller (ESC)
-- Arduino-based PWM throttle control (servo signal interface)
-- LiPo battery power source (primary test configuration)
-
-### Instrumentation Subsystem (Active)
-- STM32F3 Discovery board
-- Real-time voltage and system behavior logging
-- Arduino control signal generation
-
-### Airframe
-- 3D-printed Northrop T-38 trainer-inspired structure
-- Used as a mechanical mounting and integration platform for propulsion testing
+- Extended existing propulsion testbench with a Python-based telemetry and control layer  
+- Integrated STM32 sensor outputs (IMU + system telemetry) with Arduino ESC PWM control signals  
+- Developed structured logging pipeline in Python for synchronized capture of:
+  - throttle input commands  
+  - motor/ESC response behavior  
+  - IMU-derived motion state data  
+  - voltage/system-level telemetry (where available)
 
 ---
 
-## Fuel Cell Subsystem (Experimental / Not yet integrated into propulsion loop)
+### MAVLink / Ground Station Integration
 
-A PEM hydrogen fuel cell is included as an auxiliary energy source under evaluation.
+- Implemented Python-based MAVLink message generation layer
+- Streams synthesized telemetry derived from embedded sensor inputs
+- Enables visualization in **QGroundControl-compatible ground station environments**
+- Provides real-time representation of:
+  - system state
+  - attitude estimation (sensor-derived)
+  - throttle / control input response
 
-Current status:
-- Not integrated into ESC propulsion power path
-- Being characterized for:
-  - steady-state voltage output stability
-  - load response behavior
-  - compatibility with ESC-driven propulsion demands
-
-Future work will evaluate controlled integration into the propulsion system under defined test constraints.
-
----
-
-## Development Phases
-
-### Phase 1 — Baseline Propulsion Characterization (In Progress)
-- LiPo → ESC → motor validation
-- PWM throttle response testing
-- STM32 logging of system behavior
-- Establish baseline performance curves
-
-### Phase 2 — Fuel Cell Characterization (In Progress / Planned)
-- Independent PEM fuel cell testing
-- Load response and voltage stability measurement
-- Electrical compatibility assessment
-
-### Phase 3 — Coupling Investigation (Planned)
-- Evaluate fuel cell contribution to propulsion power path
-- Compare performance against LiPo baseline
-- Analyze transient response differences between power sources
-
-### Phase 4 — Hybrid Integration Study (Future Work)
-- Controlled hybrid power experiments
-- Thermal + electrical coupling analysis
-- System-level efficiency and stability evaluation
+This creates a simplified ground-control-style feedback loop between embedded hardware and operator interface tooling.
 
 ---
 
-## Safety Notes
+### Systems Architecture Outcome
 
-- Bench-level testing only
-- Low-throttle constrained operation during experiments
-- Fuel cell is not currently part of primary propulsion power path
-- ESC/motor tests are conducted within safe PWM limits
-- Power systems are monitored during all test runs
+The resulting system demonstrates a minimal end-to-end UAS data flow:
 
----
-
-## Key Technologies
-
-- STM32F3 Discovery (instrumentation & logging)
-- Arduino (PWM control interface)
-- Brushless DC motor + ESC
-- LiPo battery power system
-- PEM hydrogen fuel cell (experimental subsystem)
-- 3D printing (airframe development)
+Embedded Layer (STM32 + Arduino)
+→ Sensor + control signal capture  
+→ Python telemetry aggregation layer  
+→ MAVLink encoding  
+→ Ground station visualization (QGroundControl)
 
 ---
 
-## Status
+### Stretch / Experimental Direction
 
-🟡 Active experimental prototype  
-🟡 Subsystem validation in progress  
-🟡 Hybrid integration under investigation  
+- Multi-threaded acquisition pipeline for concurrent sensor + control signal logging  
+- Time-synchronized dataset generation across IMU, throttle, and vibration proxies  
+- Expansion toward hardware-in-the-loop (HITL) style test architecture  
+- Exploration of deterministic timing between embedded events and telemetry output  
+- Vibration proxy testing using external accelerometer sources (tablet/phone-based instrumentation as interim solution)
 
 ---
 
-## Notes
+### Systems Engineering Intent
 
-This project follows a staged systems engineering approach:
+This work is structured as a UAS-oriented integration testbed, focusing on:
 
-1. Baseline propulsion system validation  
-2. Independent subsystem characterization  
-3. Controlled coupling experiments  
-4. Iterative integration toward hybrid propulsion architecture evaluation  
+- real-time telemetry architecture  
+- embedded-to-Python data pipelines  
+- ground station compatibility patterns (MAVLink)  
+- reproducible test execution for propulsion system behavior
+- 
+## Experimental Energy Subsystem: PEM Hydrogen Fuel Cell (Research Direction)
+
+An auxiliary PEM hydrogen fuel cell subsystem is included in the broader experimental architecture as part of ongoing systems-level investigation into alternative power sources for small UAV-class propulsion systems.
+
+### Current Status
+
+- Physically present as a standalone power subsystem
+- Not currently integrated into the ESC propulsion power path
+- Operated independently for characterization and measurement
+
+### Characterization Focus
+
+- Open-circuit and loaded voltage stability under varying conditions
+- Transient response behavior under step-load scenarios
+- Comparison against LiPo baseline propulsion power source
+- Compatibility assessment with ESC-driven motor loads
+
+### Future Integration Study (Non-Operational / Experimental Only)
+
+Planned research directions include:
+
+- Controlled coupling of PEM fuel cell output into propulsion power architecture
+- Evaluation of hybrid power blending (LiPo + fuel cell assist model)
+- Thermal coupling analysis between propulsion system and fuel cell subsystem
+- System-level efficiency comparison across power configurations
+
+### Systems Engineering Context
+
+This subsystem is treated as a modular experimental energy source within a staged integration framework:
+
+1. Baseline LiPo-powered propulsion validation  
+2. Independent fuel cell characterization  
+3. Controlled, instrumented coupling experiments  
+4. Hybrid architecture evaluation (research phase only)
+
+The intent is to evaluate feasibility, stability, and control implications of integrating non-battery energy sources into small-scale UAV propulsion systems under instrumented test conditions.
